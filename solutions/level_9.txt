@@ -1,0 +1,91 @@
+class Player:
+    def __init__(self):
+        self.health = 20
+        self.explored = False  # a-t-on touché le mur du fond ?
+
+    def play_turn(self, warrior):
+        hurt = warrior.health() < self.health
+        space = warrior.feel()
+        if space.is_wall():
+            self.explored = True
+            warrior.pivot()
+        elif space.is_captive():
+            warrior.rescue()
+        elif space.is_enemy():
+            warrior.attack()
+        elif self.shooter_in_sight(warrior, "backward") and not self.shooter_in_sight(warrior, "forward"):
+            warrior.pivot()  # un tireur dans le dos : lui faire face
+        elif self.enemy_in_sight(warrior, "forward"):
+            warrior.shoot()
+        elif warrior.health() < 20 and not hurt:
+            warrior.rest()
+        elif space.is_stairs() and not self.explored:
+            warrior.pivot()  # ne pas partir avant d'avoir tout nettoyé
+        else:
+            warrior.walk()
+        self.health = warrior.health()
+
+    def enemy_in_sight(self, warrior, direction):
+        for space in warrior.look(direction):
+            if space.is_captive():
+                return False  # ne jamais tirer à travers un captif
+            if space.is_enemy():
+                return True
+        return False
+
+    def shooter_in_sight(self, warrior, direction):
+        """Le premier occupant visible est-il un archer (a) ou un sorcier (w) ?"""
+        for space in warrior.look(direction):
+            if not space.is_empty():
+                return space.is_enemy() and space.character in "aw"
+        return False
+
+
+### 
+
+## Niveau 9, le dernier de la tour beginner
+
+```
+ -----------
+|>Ca  @ S wC|
+ -----------
+```
+
+Tu commences au milieu, tourné vers la droite (l'est). Les deux côtés sont occupés :
+
+| Côté | Contenu | Danger |
+|---|---|---|
+| **Derrière toi** (gauche) | escalier `>`, captif `C`, **archer** `a` | L'archer te voit dès le début et tire 3 dégâts par tour. |
+| **Devant toi** (droite) | **Thick Sludge** `S` (24 PV), **sorcier** `w`, captif `C` | La Sludge frappe seulement au contact. Le sorcier fait 11 dégâts, mais la Sludge lui bloque la vue. |
+
+### Le piège principal : « Watch your back »
+
+Dès le premier tour, ton guerrier voit la Sludge devant lui et a envie de lui tirer dessus. Mais pendant ce temps, l'archer derrière lui le touche à chaque tour. La Sludge a 24 PV et une flèche fait 3 dégâts : il faut 8 tirs pour la tuer, alors que tu meurs au bout de 7 tours. J'ai testé ce scénario, tu meurs au tour 7.
+
+### La stratégie, étape par étape
+
+1. **Repérer d'où viennent les dégâts.** Si tu perds des PV alors que tu n'as aucun ennemi au contact devant toi, c'est qu'on te tire dessus. Regarde derrière toi avec `look("backward")`. S'il y a un ennemi, c'est lui qu'il faut traiter en premier.
+2. **Te retourner avec `pivot()`, une seule fois.** Ensuite, tu continues de faire face à l'archer même s'il te touche encore. Une fois retourné, la Sludge est derrière toi : si tu te retournes encore à chaque dégât, tu tourneras en rond. Il faut retenir dans ton `Player` que tu es déjà engagé contre lui.
+3. **Tuer l'archer à distance.** Il a 7 PV, donc 3 flèches suffisent. Tu perds quelques PV pendant ce temps, c'est normal.
+4. **Libérer le captif de gauche.** Avance jusqu'à lui et utilise `rescue()`. Attention à ne pas lui tirer dessus : comme au niveau 8, on ne tire que si la **première** chose visible est un ennemi.
+5. **Te reposer.** Plus personne ne peut te toucher, alors reprends tes 20 PV avant d'affronter l'autre côté.
+6. **Repartir vers la droite.** Retourne-toi et tire sur la **Sludge à distance**. Elle ne bouge pas et ne frappe qu'au contact, donc c'est sans aucun risque. Il faut 8 flèches.
+7. **Tuer le sorcier, avec la même astuce qu'au niveau 8.** Quand la Sludge meurt, le sorcier avait décidé de son action pendant qu'elle lui bloquait la vue. Au tour suivant, tu joues en premier : une flèche et il meurt, avant d'avoir pu tirer.
+8. **Libérer le dernier captif**, au fond à droite.
+9. **Retraverser toute la salle jusqu'à l'escalier.** Il est tout à gauche, donc tu te retournes encore une fois quand tu touches le mur ou que le chemin est libre derrière.
+
+### Les règles à combiner (tout ce que tu as appris)
+
+- **Captif au contact** : `rescue()`, toujours en priorité.
+- **Touché sans ennemi au contact, et ennemi derrière** : `pivot()`, une seule fois.
+- **Ennemi au contact** : `attack()`.
+- **Ennemi en premier dans `look()`** : `shoot()`.
+- **Blessé mais plus personne ne te touche** : `rest()`.
+- **Captif ou ennemi derrière, et rien à faire devant** : `pivot()`.
+- **Sinon** : `walk()`.
+
+### Ce que donne cette stratégie
+
+J'ai testé cette stratégie sur une copie de ta partie. Le niveau est réussi en 38 tours, pour 91 points, et tu ne perds **aucun PV face à la Sludge ni au sorcier**. Tu as alors gravi toute la tour beginner. Je n'ai rien enregistré dans `solutions/`, puisque tu voulais seulement l'explication.
+
+**Pour optimiser :** au premier tour, tu tires une flèche inutile sur la Sludge avant de remarquer l'archer. Si tu regardes derrière toi dès le tour 1, tu gagnes un tour et quelques PV.

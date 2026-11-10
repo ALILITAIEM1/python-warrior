@@ -1,0 +1,5 @@
+Ce qui est nouveau dans ce niveau : la carte est |C @ S aa|, avec un captif derrière toi, une Thick Sludge (24 PV) puis deux archers devant.
+
+Le captif est derrière toi. Le guerrier recule d’abord avec walk("backward") jusqu’à le sentir, puis le libère avec rescue("backward").
+Les archers tirent de loin. S’il est touché et qu’il lui reste moins de 10 PV,
+ il recule hors de leur portée, qui est limitée. Il se repose ensuite jusqu’à 20 PV, puis il repart à l’attaque.

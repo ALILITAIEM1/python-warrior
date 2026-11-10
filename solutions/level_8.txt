@@ -1,0 +1,46 @@
+class Player:
+    def play_turn(self, warrior):
+        space = warrior.feel()
+        if space.is_captive():
+            warrior.rescue()
+        elif self.enemy_in_sight(warrior):
+            warrior.shoot()
+        else:
+            warrior.walk()
+
+    def enemy_in_sight(self, warrior):
+        for space in warrior.look():
+            if space.is_captive():
+                return False  # ne jamais tirer à travers un captif
+            if space.is_enemy():
+                return True
+        return False
+
+
+###  
+Niveau 8
+ ------
+|@ Cww>|
+ ------
+
+La situation : il y a un captif C, puis deux sorciers w devant l’escalier.
+
+Le danger : un sorcier n’a que 3 PV, mais il tire à distance pour 11 dégâts. Avec tes 20 PV, deux tirs suffisent à te tuer. Si tu vas les frapper au corps à corps, ils te tirent dessus pendant que tu approches.
+
+Les nouveautés :
+
+warrior.look() renvoie les 3 cases devant toi, pas seulement la case adjacente comme feel().
+warrior.shoot() tire une flèche qui fait 3 dégâts, soit exactement les PV d’un sorcier. Elle touche la première unité sur son trajet.
+
+Les deux pièges :
+
+Ne tire pas tant que le captif est devant. La flèche le toucherait et le tuerait, lui qui n’a qu’1 PV. Il faut donc d’abord le libérer avec rescue().
+Le captif te protège. Les sorciers, comme les archers, ne voient pas au-delà de la première unité qui leur bloque la vue. Tant que le captif est là, ils ne peuvent pas te viser.
+
+Pourquoi tu ne prends aucun dégât : à chaque tour, le moteur fait d’abord décider toutes les unités en regardant le plateau, puis il exécute les actions, en commençant par toi.
+
+Tour 2 : tu libères le captif. Les sorciers avaient déjà décidé pendant que le captif leur bloquait la vue, donc ils ne tirent pas.
+Tour 3 : tu tires et tues le premier sorcier. Le second avait décidé alors que le premier lui cachait la vue, donc il ne tire pas.
+Tour 4 : tu tues le second sorcier.
+
+Tu ne leur laisses jamais un seul tour avec une ligne de tir dégagée.

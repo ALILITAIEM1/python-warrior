@@ -1,0 +1,43 @@
+Niveau 7
+ ------
+|>a S @|
+ ------
+
+La situation : tu démarres collé à un mur. L’escalier >, la Thick Sludge S (24 PV) et l’archer a sont tous derrière toi.
+
+Le piège : tu pourrais tout faire en marche arrière, avec walk("backward") et attack("backward"). Mais une attaque vers l’arrière fait deux fois moins de dégâts. 
+Contre la Sludge et ses 24 PV, le combat durerait deux fois plus longtemps et tu prendrais beaucoup plus de coups.
+
+La nouveauté : warrior.pivot(). Elle te fait faire demi-tour, ce qui coûte un tour. Ensuite, l’avant pointe vers les ennemis et tu frappes à pleine puissance.
+
+La logique :
+
+Si tu sens un mur devant toi (feel().is_wall()), tu te retournes avec pivot().
+Ensuite, c’est la même stratégie qu’au niveau 6 : tu attaques au contact, tu recules si tu es faible sous les flèches, tu te reposes quand tu es en sécurité, et sinon tu avances.
+
+
+
+## 
+class Player:
+    def __init__(self):
+        self.health = 20
+
+    def play_turn(self, warrior):
+        health = warrior.health()
+        hurt = health < self.health
+        space = warrior.feel()
+
+        if space.is_wall():
+            warrior.pivot()                 # mur devant : on se retourne
+        elif space.is_captive():
+            warrior.rescue()
+        elif space.is_enemy():
+            warrior.attack()
+        elif hurt and health < 10:
+            warrior.walk("backward")        # trop faible sous les flèches : on recule
+        elif not hurt and health < 20:
+            warrior.rest()                  # en sécurité : on se soigne
+        else:
+            warrior.walk()
+
+        self.health = warrior.health()

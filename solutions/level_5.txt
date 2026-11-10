@@ -1,0 +1,28 @@
+class Player:
+    def __init__(self):
+        self.health = 20
+
+    def play_turn(self, warrior):
+        space = warrior.feel()
+        hurt = warrior.health() < self.health
+        if space.is_captive():
+            warrior.rescue()
+        elif space.is_enemy():
+            warrior.attack()
+        elif warrior.health() < 20 and not hurt:
+            warrior.rest()
+        else:
+            warrior.walk()
+        self.health = warrior.health()
+        
+		
+################################""
+Ce qui change par rapport au niveau 4 : avant d’attaquer, le guerrier vérifie si la case devant lui est un captif. Si c’est le cas,
+ il le libère avec rescue() au lieu de le frapper : un captif n’a qu’1 PV, donc une attaque le tuerait. La règle de repos ne change pas : 
+ il se repose seulement s’il est blessé et qu’on ne l’attaque pas à ce moment-là. Comme ça, il ne se repose pas pendant que les archers lui tirent dessus.
+
+Test : je l’ai lancée sur une copie de ta partie. Le niveau est réussi en 31 tours, 
+avec les deux captifs libérés, pour 110 points (score de niveau 78, bonus de temps 14, bonus de fin 18).
+
+Ton vrai pywarrior/ali-beginner/player.py n’a pas été modifié. Pour jouer le niveau, copie ce code dedans, 
+puis lance .venv/bin/pywarrior --gui.

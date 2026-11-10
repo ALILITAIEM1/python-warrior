@@ -33,24 +33,64 @@ def _eyes(surface, center, direction, radius, color=(20, 20, 24)):
         pygame.draw.circle(surface, color, (ex + dx * radius * 0.05, ey + dy * radius * 0.05), max(1, radius * 0.09))
 
 
+# Pixel-art knight, facing east. Each character is one pixel of the sprite:
+# "." is transparent, "A" takes the warrior color (theme.UNIT_COLORS), the
+# other letters are defined in WARRIOR_PALETTE.
+WARRIOR_PIXELS = [
+    "......KKKKKK........",
+    ".....KWWWWWWK.......",
+    "....KWWWWWWWGK......",
+    "....KWWWWWWWGK......",
+    "....KWWWKVVVVK......",
+    "....KWWWWKVVGK......",
+    "....KWWWWWWWGK......",
+    ".....KGGGGGGK.......",
+    "....KWWWWWWWWK......",
+    "...KWWWWWWWWGKK.....",
+    "...KWWWWWWWKSSKKKKK.",
+    "...KGWWWWWWKSSHBBBBK",
+    "...KGAAAAAAKKKKKKKK.",
+    "....KWWWWWWGK.......",
+    "....KWWGKWWGK.......",
+    "....KWWGKWWGK.......",
+    "....KDDDKDDDK.......",
+    "....KKKKKKKKK.......",
+]
+
+WARRIOR_PALETTE = {
+    "K": (28, 28, 36),     # outline
+    "W": (236, 238, 244),  # armor
+    "G": (168, 174, 188),  # armor shadow
+    "D": (96, 100, 112),   # boots
+    "V": (24, 24, 30),     # visor
+    "S": (222, 196, 160),  # hand
+    "H": (140, 100, 40),   # sword guard
+    "B": (214, 220, 232),  # sword blade
+}
+
+_warrior_cache = {}
+
+
+def _warrior_sprite(height, flip, color):
+    key = (height, flip, color)
+    if key not in _warrior_cache:
+        palette = dict(WARRIOR_PALETTE, A=color)
+        width = len(WARRIOR_PIXELS[0])
+        image = pygame.Surface((width, len(WARRIOR_PIXELS)), pygame.SRCALPHA)
+        for y, row in enumerate(WARRIOR_PIXELS):
+            for x, char in enumerate(row):
+                if char != ".":
+                    image.set_at((x, y), palette[char])
+        scale = height / len(WARRIOR_PIXELS)
+        image = pygame.transform.scale(image, (round(width * scale), height))  # stays pixelated
+        _warrior_cache[key] = pygame.transform.flip(image, True, False) if flip else image
+    return _warrior_cache[key]
+
+
 def draw_warrior(surface, center, tile, direction, color):
-    r = tile * 0.32
-    cx, cy = center
-    # sword
-    tip = _facing_point(center, direction, r * 1.55)
-    pygame.draw.line(surface, (220, 224, 235), center, tip, max(2, int(tile * 0.05)))
-    guard = _facing_point(center, direction, r * 0.95)
-    dx, dy = VECTORS[direction]
-    pygame.draw.line(surface, (140, 100, 40), (guard[0] - dy * r * 0.35, guard[1] - dx * r * 0.35),
-                     (guard[0] + dy * r * 0.35, guard[1] + dx * r * 0.35), max(2, int(tile * 0.05)))
-    # body
-    pygame.draw.circle(surface, shade(color, 0.6), (cx, cy + r * 0.08), r + 2)
-    pygame.draw.circle(surface, color, center, r)
-    # helmet
-    helmet = pygame.Rect(0, 0, r * 1.7, r * 1.2)
-    helmet.center = (cx, cy - r * 0.35)
-    pygame.draw.arc(surface, (200, 205, 215), helmet, 0, math.pi, max(3, int(r * 0.35)))
-    _eyes(surface, center, direction, r)
+    # side view only: facing west mirrors the sprite, north/south keep it facing east
+    sprite = _warrior_sprite(max(1, int(tile * 0.82)), direction == "west", tuple(color))
+    surface.blit(sprite, sprite.get_rect(center=center))
 
 
 def draw_golem(surface, center, tile, direction, color):
